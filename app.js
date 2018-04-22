@@ -14,10 +14,14 @@ class App extends Component
       time: this.initTime(),
       timeLineSize: null,
       hasLoaded: false,
-      timeLineHeight: null
+      timeLineHeight: null,
+      vertical:0,
+      horizontal:0,
+      
     }),
       (this.globVars = 
       {
+        currentChannel:null,
         hasLoaded: false,
         skyEPG: null
       });
@@ -60,6 +64,44 @@ class App extends Component
       .then(() => this.setState({ hasLoaded: true }));
   }
 
+  getCurrentShows(obj)
+  {
+    let res = JSON.parse(JSON.stringify(obj.program))
+      .filter(
+        item =>
+          (item.start >= this.state.time.getTime() - 3600000 &&
+            item.start < this.state.time.getTime() + 3600000 * 3) ||
+          (item.start + item.dur > this.state.time.getTime() - 3600000 &&
+            item.start < this.state.time.getTime() + 3600000 * 3)
+      )
+      .map((item, index, arr) => {
+        const start = item.start;
+        const dur = item.dur;
+        const epgStart = this.state.time.getTime() - 3600000;
+        const epgEnd = this.state.time.getTime() + 3600000 * 3;
+        if (start < epgStart && start + dur > epgStart) 
+        {
+          const durationComplete = start + dur - epgStart;
+
+          item.start = this.state.time.getTime();
+          item.dur = durationComplete;
+        }
+
+        if (start + dur > epgEnd) 
+        {
+          const durationEnd = epgEnd - start;
+          item.dur = durationEnd;
+        }
+        return item;
+      })
+
+      this.globVars.currentChannel = res;
+
+      return res;
+
+     
+  }
+
   componentDidMount() 
   {
     if (!this.state.timeLineSize) 
@@ -91,20 +133,60 @@ class App extends Component
   {
     console.log(this.globVars.skyEPG);
     let myTime;
+    let newHorizontal;
+    let newVertical;
     switch (e.keyCode) 
     {
       case 39:
+      //  myTime = new Date(this.state.time.getTime() + 3600000);
+       // this.setState({ time: myTime });
+       if(this.state.horizontal === this.globVars.currentChannel.length-1)
+       {
         myTime = new Date(this.state.time.getTime() + 3600000);
-        this.setState({ time: myTime });
+        
        
+         this.setState({ time: myTime });
+         if(this.globVars.currentChannel.length <=this.state.horizontal )
+         {
+           let horiz = this.globVars.currentChannel.length-1
+          this.setState({ horizontal: horiz });
+         }
+         break;
+       }
+       newHorizontal = this.state.horizontal+1;
+       this.setState({ horizontal: newHorizontal });
+      
         break;
       case 37:
+       // myTime = new Date(this.state.time.getTime() - 3600000);
+      //  this.setState({ time: myTime });
+
+      if(this.state.horizontal === 0)
+      {
         myTime = new Date(this.state.time.getTime() - 3600000);
-        this.setState({ time: myTime });
+        
+       
+         this.setState({ time: myTime });
         break;
+      }
+      newHorizontal = this.state.horizontal-1;
+       this.setState({ horizontal: newHorizontal });
+        break;
+        case 38:
+          //up
+          newVertical = this.state.vertical -1
+          this.setState({vertical:newVertical,horizontal:0});
+          break;
+
+        case 40:
+          //down
+          newVertical = this.state.vertical +1
+          this.setState({vertical:newVertical,horizontal:0});
+          break;
       default:
         break;
     }
+    
   }
 
   render() 
@@ -129,12 +211,16 @@ class App extends Component
               </div>
               {this.globVars.skyEPG.channels
                 .filter((item, index) => index < 7)
-                .map(channel => (
+                .map((channel,index) => (
+                  
                   <Channel
-                    obj={channel}
+                    obj={this.getCurrentShows(channel)}
                     hourPx={this.state.timeLineSize}
                     height={this.state.timeLineHeight}
+                    horizontal={this.state.horizontal}
                     timeState={this.state.time}
+                    title={channel.title}
+                    vertical = {index === this.state.vertical}
                   />
                 ))}
             </div>
