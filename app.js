@@ -23,7 +23,7 @@ class App extends Component
       {
         currentChannel:null,
         hasLoaded: false,
-        skyEPG: null
+        TVEPG: null
       });
   }
 
@@ -39,7 +39,7 @@ class App extends Component
 
   getSkyJSON() 
   {
-    fetch("./sky.json")
+    fetch("./TV.json")
       .then(data => data.json())
 
       .then(data => 
@@ -60,7 +60,7 @@ class App extends Component
         data.channels = res;
         return data;
       })
-      .then(data => (this.globVars.skyEPG = data))
+      .then(data => (this.globVars.TVEPG = data))
       .then(() => this.setState({ hasLoaded: true }));
   }
 
@@ -131,7 +131,7 @@ class App extends Component
 
   _handleKeyDown(e) 
   {
-    console.log(this.globVars.skyEPG);
+    console.log(this.globVars.TVEPG);
     let myTime;
     let newHorizontal;
     let newVertical;
@@ -209,7 +209,7 @@ class App extends Component
                 </div>
                 <div className="spacing" />
               </div>
-              {this.globVars.skyEPG.channels
+              {this.globVars.TVEPG.channels
                 .filter((item, index) => index < 7)
                 .map((channel,index) => (
                   
