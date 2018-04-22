@@ -96,10 +96,13 @@ class App extends Component
       case 39:
         myTime = new Date(this.state.time.getTime() + 3600000);
         this.setState({ time: myTime });
+       
         break;
       case 37:
         myTime = new Date(this.state.time.getTime() - 3600000);
         this.setState({ time: myTime });
+        break;
+      default:
         break;
     }
   }
