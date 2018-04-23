@@ -62,7 +62,7 @@ class App extends Component {
         .then(data => (this.globVars.TVEPG = data))
     );
     results.push(
-      fetch("ntv.json")
+      fetch("testTwo.json")
         .then(data => data.json())
         .then(data => (this.globVars.ntv = data))
         .then(() => {
