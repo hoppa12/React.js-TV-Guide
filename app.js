@@ -62,12 +62,12 @@ class App extends Component {
         .then(data => (this.globVars.TVEPG = data))
     );
     results.push(
-      fetch("testTwo.json")
+      fetch("testTV.json")
         .then(data => data.json())
-        .then(data => (this.globVars.ntv = data))
+        .then(data => (this.globVars.testTV = data))
         .then(() => {
           this.globVars.categories = [
-            ...new Set(this.globVars.ntv.contents.map(item => item.genre))
+            ...new Set(this.globVars.testTV.contents.map(item => item.genre))
           ];
         })
     );
