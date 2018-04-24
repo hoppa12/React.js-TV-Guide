@@ -15,20 +15,23 @@ class App extends Component {
       timeLineHeight: null,
       vertical: 0,
       horizontal: 0,
+
       menuDisplayed: true,
-      min:0,
-      max:3
+      min: 0,
+      max: 3
     }),
       (this.globVars = {
         channelPositon: null,
-        totalChannels:null,
+        totalChannels: null,
         currentChannel: null,
         hasLoaded: false,
         TVEPG: null,
         categories: [],
-        selectedNum: null
+        selectedNum: null,
+        SelectedCategory: 0
       });
   }
+  //Selected Num is the Current Category
 
   initTime() {
     return new Date(new Date().setHours(new Date().getHours(), 0, 0, 0));
@@ -62,12 +65,12 @@ class App extends Component {
         .then(data => (this.globVars.TVEPG = data))
     );
     results.push(
-      fetch("testTV.json")
+      fetch("ntv.json")
         .then(data => data.json())
-        .then(data => (this.globVars.testTV = data))
+        .then(data => (this.globVars.ntv = data))
         .then(() => {
           this.globVars.categories = [
-            ...new Set(this.globVars.testTV.contents.map(item => item.genre))
+            ...new Set(this.globVars.ntv.contents.map(item => item.genre))
           ];
         })
     );
@@ -76,7 +79,6 @@ class App extends Component {
   }
 
   getCurrentShows(obj, vertical) {
-    console.log(obj.title);
     let res = JSON.parse(JSON.stringify(obj.program))
       .filter(
         item =>
@@ -133,14 +135,111 @@ class App extends Component {
     return arr;
   }
 
-  handleCategories(e) {
-    console.log(e);
+  handleCategoryMenu(e) {
+    let res;
+
+    switch (e.keyCode) {
+      case 38:
+        if (this.state.vertical === 0) {
+          res = 0;
+        } else {
+          res = this.state.vertical -= 1;
+        }
+
+        //this.globVars.Category -=  1;
+
+        this.setState({ vertical: res, horizontal: 0 });
+        break;
+
+      case 40:
+        if (this.state.vertical === this.globVars.categories.length - 1) {
+          break;
+        } else {
+          res = this.state.vertical += 1;
+        }
+
+        //this.globVars.Category -=  1;
+
+        this.setState({ vertical: res, horizontal: 0 });
+        break;
+      case 13:
+        this.globVars.selectedNum = this.state.vertical;
+        this.globVars.channelPositon = 0;
+        let categoryChannel = this.globVars.ntv.contents.filter(
+          item =>
+            item.genre ===
+              this.globVars.categories[this.globVars.selectedNum] &&
+            item.sky !== undefined
+        );
+        console.log(categoryChannel);
+        this.setState({ vertical: 0, menuDisplayed: false });
+
+        break;
+      default:
+        break;
+    }
   }
-  _handleKeyDown(e) {
-    console.log(this.globVars.TVEPG);
+
+  handleEPGMenuUpDown(e) {
+    let verticalState;
+    switch (e.keyCode) {
+      case 38:
+        //up
+
+        verticalState = this.state.vertical - 1;
+        this.globVars.channelPositon -= 1;
+        if (this.globVars.channelPositon < 0) {
+          this.globVars.channelPositon = 0;
+          this.setState({ vertical: 0, menuDisplayed: true });
+          break;
+        }
+        console.log(this.globVars.channelPositon);
+
+        if (this.state.min > this.globVars.channelPositon) {
+          let res = this.state.min - 1;
+          this.setState({ horizontal: 0, min: res });
+          break;
+        }
+        this.setState({ vertical: verticalState, horizontal: 0 });
+
+        break;
+
+      case 40:
+        verticalState = this.state.vertical + 1;
+        if (this.state.menuDisplayed) {
+          this.handleCategoryMenu(e);
+          break;
+        }
+        this.globVars.selectedNum += 1;
+
+        if (this.state.vertical >= this.globVars.categories.length - 1) {
+          this.setState({ vertical: this.globVars.categories.length - 1 });
+          break;
+        }
+
+        this.globVars.channelPositon += 1;
+        console.log(this.globVars.channelPositon);
+        if (
+          this.globVars.channelPositon >= this.globVars.totalChannels &&
+          !this.state.menuDisplayed
+        ) {
+          let res = this.state.min + 1;
+          verticalState = this.state.vertical + 1;
+
+          this.setState({ horizontal: 0, min: res });
+          break;
+        }
+        verticalState = this.state.vertical + 1;
+        this.setState({ vertical: verticalState, horizontal: 0 });
+        break;
+    }
+  }
+
+  handleEPGMenuLeftRight(e) {
     let myTime;
     let newHorizontal;
     let newVertical;
+
     switch (e.keyCode) {
       case 39:
         //  myTime = new Date(this.state.time.getTime() + 3600000);
@@ -149,10 +248,9 @@ class App extends Component {
         if (this.state.horizontal === this.globVars.currentChannel.length - 1) {
           myTime = new Date(this.state.time.getTime() + 3600000);
 
-         
           if (this.globVars.currentChannel.length <= this.state.horizontal) {
             let horiz = this.globVars.currentChannel.length - 1;
-            this.setState({ horizontal: horiz,time: myTime  });
+            this.setState({ horizontal: horiz, time: myTime });
             break;
           }
 
@@ -174,8 +272,7 @@ class App extends Component {
           this.setState({ time: myTime });
           break;
         }
-        if (!this.globVars.currentChannel.length) 
-        {
+        if (!this.globVars.currentChannel.length) {
           myTime = new Date(this.state.time.getTime() + 3600000);
 
           this.setState({ time: myTime });
@@ -188,53 +285,51 @@ class App extends Component {
         newHorizontal = this.state.horizontal - 1;
         this.setState({ horizontal: newHorizontal });
         break;
+    }
+  }
+  _handleKeyDown(e) {
+    let myTime;
+    let newHorizontal;
+    let newVertical;
+    switch (e.keyCode) {
+      case 39:
+        if (!this.state.menuDisplayed) {
+          this.handleEPGMenuLeftRight(e);
+        }
+        break;
+
+      case 37:
+        if (!this.state.menuDisplayed) {
+          this.handleEPGMenuLeftRight(e);
+        }
+        break;
+
       case 38:
         //up
-        this.globVars.channelPositon -= 1;
-        console.log(this.globVars.channelPositon);
-        let newPos = this.state.vertical - 1;
-        if (this.globVars.channelPositon <= 0 && this.state.menuDisplayed) {
-          this.setState({ vertical: 0 });
-          break;
-        }
 
-        if (newPos < 0 && !this.state.menuDisplayed) {
-          this.setState({ vertical: 0, menuDisplayed: true });
+        if (this.state.menuDisplayed) {
+          this.handleCategoryMenu(e);
+          break;
+        } else {
+          this.handleEPGMenuUpDown(e);
           break;
         }
-        newVertical = this.state.vertical - 1;
-        this.setState({ vertical: newVertical, horizontal: 0 });
-        break;
 
       case 40:
         //down
-        if (
-          this.state.vertical >= this.globVars.categories.length - 1 &&
-          this.state.menuDisplayed
-        ) {
-          this.setState({ vertical: this.globVars.categories.length - 1 });
+
+        if (this.state.menuDisplayed) {
+          this.handleCategoryMenu(e);
+          break;
+        } else {
+          this.handleEPGMenuUpDown(e);
           break;
         }
 
-        this.globVars.channelPositon += 1;
-        console.log(this.globVars.channelPositon )
-        if(this.globVars.channelPositon >= this.globVars.totalChannels&&
-          !this.state.menuDisplayed)
-        {
-          let res = this.state.min +1
-          newVertical = this.state.vertical + 1;
-          this.globVars.channelPositon -= 1;
-        this.setState({  horizontal: 0,min:res });
-        break;
-        }
-       
-        newVertical = this.state.vertical + 1;
-        this.setState({ vertical: newVertical, horizontal: 0 });
-
-        break;
       case 13:
-        if (this.state.menuDisplayed) 
-        {
+        if (this.state.menuDisplayed) {
+          this.handleCategoryMenu(e);
+          break;
           this.globVars.selectedNum = this.state.vertical;
           this.globVars.channelPositon = 0;
 
@@ -246,18 +341,15 @@ class App extends Component {
     }
   }
 
-  getChannelLength()
-  {
-    
-    let res = this.globVars.TVEPG.channels
-                .filter(
-                  (item, index) =>
-                  this.state.min === index ||
-                    (this.state.min + 5 >= index
-                    && index > this.state.min))
-                this.globVars.totalChannels = res.length
-                console.log(res)
-    return res
+  getChannelLength() {
+    let res = this.globVars.TVEPG.channels.filter(
+      (item, index) =>
+        this.state.min === index ||
+        (this.state.min + 5 >= index && index > this.state.min)
+    );
+    this.globVars.totalChannels = res.length;
+
+    return res;
   }
 
   render() {
@@ -306,21 +398,20 @@ class App extends Component {
                 </div>
                 <div className="spacing" />
               </div>
-              {this.getChannelLength()
-                .map((channel, index) => (
-                  <Channel
-                    obj={this.getCurrentShows(
-                      channel,
-                      index === this.state.vertical
-                    )}
-                    hourPx={this.state.timeLineSize}
-                    height={this.state.timeLineHeight}
-                    horizontal={this.state.horizontal}
-                    timeState={this.state.time}
-                    title={channel.title}
-                    vertical={index === this.state.vertical}
-                  />
-                ))}
+              {this.getChannelLength().map((channel, index) => (
+                <Channel
+                  obj={this.getCurrentShows(
+                    channel,
+                    index === this.state.vertical
+                  )}
+                  hourPx={this.state.timeLineSize}
+                  height={this.state.timeLineHeight}
+                  horizontal={this.state.horizontal}
+                  timeState={this.state.time}
+                  title={channel.title}
+                  vertical={index === this.state.vertical}
+                />
+              ))}
             </div>
             <div className="item">{this.state.timeLineSize}</div>
           </div>
