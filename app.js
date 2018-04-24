@@ -65,12 +65,12 @@ class App extends Component {
         .then(data => (this.globVars.TVEPG = data))
     );
     results.push(
-      fetch("ntv.json")
+      fetch("testTV.json")
         .then(data => data.json())
-        .then(data => (this.globVars.ntv = data))
+        .then(data => (this.globVars.testTV = data))
         .then(() => {
           this.globVars.categories = [
-            ...new Set(this.globVars.ntv.contents.map(item => item.genre))
+            ...new Set(this.globVars.testTV.contents.map(item => item.genre))
           ];
         })
     );
@@ -165,11 +165,11 @@ class App extends Component {
       case 13:
         this.globVars.selectedNum = this.state.vertical;
         this.globVars.channelPositon = 0;
-        let categoryChannel = this.globVars.ntv.contents.filter(
+        let categoryChannel = this.globVars.testTV.contents.filter(
           item =>
             item.genre ===
               this.globVars.categories[this.globVars.selectedNum] &&
-            item.sky !== undefined
+            item.tvdata !== undefined
         );
         console.log(categoryChannel);
         this.setState({ vertical: 0, menuDisplayed: false });
